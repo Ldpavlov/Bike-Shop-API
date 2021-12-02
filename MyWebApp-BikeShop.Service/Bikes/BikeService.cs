@@ -8,6 +8,7 @@
     using MyWebApp_BikeShop.Services.Bikes.Models;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading.Tasks;
 
     public class BikeService : IBikeService
     {
@@ -20,8 +21,8 @@
             this.mapper = mapper.ConfigurationProvider;
         }
 
-        public IEnumerable<AllBikeServiceModel> AllBikes()
-            => data.Bikes
+        public async Task<IEnumerable<AllBikeServiceModel>> AllBikes()
+            => await data.Bikes
                 .OrderByDescending(c => c.Id)
                 .Include(c => c.Category)
                 .Include(c => c.Seller)
@@ -36,17 +37,17 @@
                     Category = c.Category.Name,
                     UserId = c.Seller.UserId
                 })
-            .ToList();
+            .ToListAsync();
 
-        private string GetCategoryName(int id)
+        public string GetCategoryName(int id)
             => data.Categories.FirstOrDefault(c => c.Id == id).Name;
 
-        public int GetSellerId(string userId)
-            =>  this.data
+        public async Task<int> GetSellerId(string userId)
+            => await this.data
                 .Sellers
                 .Where(s => s.UserId == userId)
                 .Select(s => s.Id)
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();
 
         public void Add(AddBikeServiceModel bike)
         {
@@ -79,15 +80,15 @@
                 .OrderBy(br => br)
                 .ToList();
 
-        public IEnumerable<BikeCategoryServiceModel> GetAllCategories() 
-            => this.data
+        public async Task<IEnumerable<BikeCategoryServiceModel>> GetAllCategories() 
+            => await this.data
                 .Categories
                 .Select(c => new BikeCategoryServiceModel
                 {
                     Id = c.Id,
                     Name = c.Name
                 })
-            .ToList();
+            .ToListAsync();
 
 
         public DetailsServiceModel Details(int id)
@@ -124,13 +125,13 @@
             return true;
         }
 
-        public string GetUserId(int id) 
-            =>  this.data
+        public async Task<string> GetUserId(int id) 
+            =>  await this.data
                .Bikes
                .Include(b => b.Seller)
                .Where(b => b.Id == id)
                .Select(b => b.Seller.UserId)
-               .FirstOrDefault();
+               .FirstOrDefaultAsync();
 
         public bool IsSeller(int bikeId, int sellerId)
             => this.data

@@ -12,6 +12,7 @@
     using MyWebApp_BikeShop.Services.Bikes.Models;
     using MyWebApp_BikeShop.Services.Sellers;
     using System.Linq;
+    using System.Threading.Tasks;
 
     public class BikeController : Controller
     {
@@ -30,11 +31,11 @@
             this.sellerService = sellersService;
         }
 
-        public IActionResult All([FromQuery] AllBikesViewModel query)
+        public async Task<IActionResult> All([FromQuery] AllBikesViewModel query)
         {
             ViewBag.UserId = this.User.GetId();            
 
-            var bikesQuery = bikeService.AllBikes();
+            var bikesQuery = await bikeService.AllBikes();
 
             if (!string.IsNullOrEmpty(query.Brand))
             {
@@ -54,9 +55,7 @@
                 .Skip((query.CurrentPage - 1) * AllBikesViewModel.BikesPerPage)
                 .Take(AllBikesViewModel.BikesPerPage)
                 .AsQueryable()
-                .ProjectTo<BikeListingViewModel>(this.selectionMapper);
-
-            
+                .ProjectTo<BikeListingViewModel>(this.selectionMapper);            
 
             var bikeBrands = bikeService.Brands();
 
@@ -68,7 +67,7 @@
         }
 
         [Authorize]
-        public IActionResult Add()
+        public async Task<IActionResult> Add()
         {
             if (!this.sellerService.IsValidSeller(this.User.GetId()))
             {
@@ -77,15 +76,15 @@
 
             return View(new AddBikeFormModel
             {
-                Categories = bikeService.GetAllCategories()
+                Categories = await bikeService.GetAllCategories()
             });
         }
 
         [Authorize]
         [HttpPost]
-        public IActionResult Add(AddBikeFormModel bike)
+        public async Task<IActionResult> Add(AddBikeFormModel bike)
         {
-            var sellerId = bikeService.GetSellerId(this.User.GetId());
+            var sellerId = await bikeService.GetSellerId(this.User.GetId());
 
             if (sellerId == 0)
             {
@@ -99,7 +98,7 @@
 
             if (!ModelState.IsValid)
             {
-                bike.Categories = bikeService.GetAllCategories();
+                bike.Categories = await bikeService.GetAllCategories();
                 return View(bike);
             }
 
@@ -121,7 +120,7 @@
         }
 
         [Authorize]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
             var userId = this.User.GetId();
 
@@ -132,21 +131,21 @@
 
             var bike = this.bikeService.Details(id);
 
-            if(bikeService.GetUserId(id) != userId)
+            if(await bikeService.GetUserId(id) != userId)
             {
                 return Unauthorized();
             }
 
             var bikeData = this.mapper.Map<DetailsServiceModel, AddBikeServiceModel>(bike);
 
-            bikeData.Categories = this.bikeService.GetAllCategories();
+            bikeData.Categories = await this.bikeService.GetAllCategories();
 
             return View(bikeData);
         }
 
         [HttpPost]
         [Authorize]
-        public IActionResult Edit(int id, AddBikeFormModel bike)
+        public async Task<IActionResult> Edit(int id, AddBikeFormModel bike)
         {
             var sellerId = this.sellerService.IdUser(this.User.GetId());
 
@@ -162,7 +161,7 @@
 
             if (!ModelState.IsValid)
             {
-                bike.Categories = this.bikeService.GetAllCategories();
+                bike.Categories = await this.bikeService.GetAllCategories();
 
                 return View(bike);
             }
